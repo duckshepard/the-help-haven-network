@@ -21,10 +21,10 @@ const ResourceMap = dynamic(() => import("@/components/ResourceMap"), {
   ),
 });
 
-// Resources shown per page in the grid below. 24 = 6 rows of the 4-column
-// grid at desktop width, a clean multiple that also divides evenly at the
-// 3-column, 2-column, and 1-column breakpoints.
-const PAGE_SIZE = 24;
+// Resources shown per page in the grid below. 16 = 4 rows of the 4-column
+// grid at desktop width, so a page never runs past a glance-able number of
+// rows before "Next" kicks in.
+const PAGE_SIZE = 16;
 
 // Shared client logic for both /browse (all categories, query-string
 // filtering) and /browse/[category] (one category per URL, for real
