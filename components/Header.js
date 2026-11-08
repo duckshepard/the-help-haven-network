@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "Browse" },
   { href: "/add", label: "Add a Resource" },
   { href: "/about", label: "About" },
+  { href: "/share", label: "Share" },
 ];
 
 // Centered, sitting directly on the page's cube-pattern backdrop (no opaque
