@@ -418,12 +418,15 @@ textarea {
    checkbox shown above the results for every category. Opacity + pointer-
    events (not display/visibility) keep the checkbox in the normal tab
    order, so a keyboard user can still reach and use it — :focus-within
-   reveals the popover the same way :hover does for a mouse user. */
+   reveals the popover the same way :hover does for a mouse user. Opens
+   downward (2026-11-08) now that the rail is a horizontal pill row instead
+   of a vertical sidebar — opening to the right no longer makes sense once
+   pills sit next to each other instead of stacked. */
 .rail-detox-popover {
   position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
   z-index: 20;
   background: var(--panel-glass);
   backdrop-filter: blur(6px);
@@ -440,4 +443,57 @@ textarea {
 .rail-detox-wrap:focus-within .rail-detox-popover {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* Horizontal category pill row (2026-11-08) — replaces the vertical
+   sidebar CategoryRail used to render on /browse. Wraps to as many rows
+   as the viewport needs instead of being locked to a fixed column count,
+   so it stays readable from a narrow phone up to a wide desktop. */
+.category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: var(--panel-glass);
+  border: 1px solid var(--line);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.category-pill:hover {
+  background: var(--panel);
+  color: var(--ink);
+}
+.category-pill[aria-current="page"] {
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+/* Browse-results pagination controls, shown below the resource grid once
+   there's more than one page. */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.pagination .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pagination-status {
+  font-size: 13px;
+  color: var(--ink-soft);
+  white-space: nowrap;
 }
