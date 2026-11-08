@@ -21,9 +21,9 @@ const ResourceMap = dynamic(() => import("@/components/ResourceMap"), {
   ),
 });
 
-// Resources shown per page in the grid below. 24 = 8 rows of the 3-column
+// Resources shown per page in the grid below. 24 = 6 rows of the 4-column
 // grid at desktop width, a clean multiple that also divides evenly at the
-// 2-column and 1-column breakpoints.
+// 3-column, 2-column, and 1-column breakpoints.
 const PAGE_SIZE = 24;
 
 // Shared client logic for both /browse (all categories, query-string
@@ -172,16 +172,27 @@ function BrowseResults({ initialCategory, initialResources }) {
     <div>
       <CategoryRail activeCategory={activeCat} zip={zip} detoxOnly={detoxOnly} onToggleDetox={toggleDetoxOnly} />
 
+      {/* Height trimmed roughly in half (2026-11-08) via inline overrides
+          scoped to just this instance — the shared .hero-panel class in
+          globals.css is untouched, so the homepage hero and the About/Add
+          pages (which also use that class) keep their original size. */}
       <div
         className="hero-panel"
-        style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flexWrap: "wrap",
+          padding: "14px 20px",
+        }}
       >
         <span style={{ lineHeight: 1, color: "var(--teal)" }} aria-hidden="true">
-          <CategoryIcon slug={activeCategoryInfo.slug} size={34} />
+          <CategoryIcon slug={activeCategoryInfo.slug} size={22} />
         </span>
         <div>
-          <h2 style={{ fontSize: 20, marginBottom: 4 }}>{activeCategoryInfo.label}</h2>
-          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 13.5 }}>
+          <h2 style={{ fontSize: 16, marginBottom: 2 }}>{activeCategoryInfo.label}</h2>
+          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 12.5 }}>
             Search by name or need below, or filter by ZIP — the map is further down, under the listings.
           </p>
         </div>
