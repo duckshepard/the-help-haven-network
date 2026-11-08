@@ -381,13 +381,19 @@ textarea {
   pointer-events: none;
 }
 
-/* Browse-page results grid — three cards per row on desktop (was an
-   auto-fill grid that landed on two per row at typical widths), stepping
-   down at narrower widths so cards never get too cramped. */
+/* Browse-page results grid — four cards per row on desktop (was three),
+   now that cards are smaller and more compact, with an added mid-width
+   step down to three before dropping to two and then one so the grid
+   never jumps straight from four to two. */
 .resource-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .resource-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 @media (max-width: 860px) {
   .resource-grid {
