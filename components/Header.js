@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/add", label: "Add a Resource" },
   { href: "/about", label: "About" },
   { href: "/share", label: "Share" },
+  { href: "/suggestions", label: "Suggestions" },
 ];
 
 // Centered, sitting directly on the page's cube-pattern backdrop (no opaque
@@ -63,6 +64,8 @@ export default function Header() {
           style={{
             display: "flex",
             gap: 4,
+            flexWrap: "wrap",
+            justifyContent: "center",
             background: "var(--panel-glass)",
             backdropFilter: "blur(6px)",
             WebkitBackdropFilter: "blur(6px)",
