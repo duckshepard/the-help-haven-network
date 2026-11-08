@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -20,6 +20,11 @@ const ResourceMap = dynamic(() => import("@/components/ResourceMap"), {
     </div>
   ),
 });
+
+// Resources shown per page in the grid below. 24 = 8 rows of the 3-column
+// grid at desktop width, a clean multiple that also divides evenly at the
+// 2-column and 1-column breakpoints.
+const PAGE_SIZE = 24;
 
 // Shared client logic for both /browse (all categories, query-string
 // filtering) and /browse/[category] (one category per URL, for real
@@ -55,6 +60,8 @@ function BrowseResults({ initialCategory, initialResources }) {
   const [selectedId, setSelectedId] = useState(null);
   const [zipCenter, setZipCenter] = useState(null);
   const [zipLocating, setZipLocating] = useState(false);
+  const [page, setPage] = useState(1);
+  const resultsRef = useRef(null);
 
   useEffect(() => {
     setZipInput(zip);
@@ -125,6 +132,22 @@ function BrowseResults({ initialCategory, initialResources }) {
     });
   }, [resources, activeCat, detoxOnly, zip, zipCenter, query]);
 
+  // Jump back to page 1 whenever the filtered set changes shape — paging
+  // stays meaningless (or points past the end) otherwise once someone
+  // switches category, types a search, or changes the ZIP.
+  useEffect(() => {
+    setPage(1);
+  }, [activeCat, detoxOnly, zip, zipCenter, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  function goToPage(p) {
+    setPage(p);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const basePath = activeCat !== "all" ? `/browse/${activeCat}` : "/browse";
 
   // Detox is a real, non-obvious need buried inside "Substance Abuse &
@@ -147,6 +170,8 @@ function BrowseResults({ initialCategory, initialResources }) {
 
   return (
     <div>
+      <CategoryRail activeCategory={activeCat} zip={zip} detoxOnly={detoxOnly} onToggleDetox={toggleDetoxOnly} />
+
       <div
         className="hero-panel"
         style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}
@@ -182,7 +207,7 @@ function BrowseResults({ initialCategory, initialResources }) {
             style={{ flex: 1, minWidth: 120 }}
           />
           <button className="btn" style={{ background: "var(--panel)", border: "1px solid var(--line)", flex: "none" }} type="submit">
-            {zip ? "Update" : "Go"}
+            {zip ? "Update" : "Find Nearby"}
           </button>
           {zip && (
             <a href={basePath} className="btn" style={{ background: "transparent", border: "1px solid var(--line)", flex: "none" }}>
@@ -208,23 +233,46 @@ function BrowseResults({ initialCategory, initialResources }) {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 28, alignItems: "start", marginBottom: 28 }}>
-        <CategoryRail activeCategory={activeCat} zip={zip} detoxOnly={detoxOnly} onToggleDetox={toggleDetoxOnly} />
-        <div className="resource-grid">
-          {!loading && filtered.length === 0 && (
-            <div className="empty">
-              {detoxOnly
-                ? 'No detox-offering listings match your other filters yet. Try clearing the ZIP or category filter.'
-                : zip
-                ? `No resources found in ${zip} yet. Try a nearby ZIP, or use "Add a Resource" to add one.`
-                : 'No resources match yet. Try a different search, or use "Add a Resource" to add one.'}
-            </div>
-          )}
-          {filtered.map((r) => (
-            <ResourceCard key={r.id} resource={r} onSelect={setSelectedId} />
-          ))}
-        </div>
+      <div ref={resultsRef} className="resource-grid" style={{ marginBottom: 20 }}>
+        {!loading && filtered.length === 0 && (
+          <div className="empty">
+            {detoxOnly
+              ? 'No detox-offering listings match your other filters yet. Try clearing the ZIP or category filter.'
+              : zip
+              ? `No resources found in ${zip} yet. Try a nearby ZIP, or use "Add a Resource" to add one.`
+              : 'No resources match yet. Try a different search, or use "Add a Resource" to add one.'}
+          </div>
+        )}
+        {pageItems.map((r) => (
+          <ResourceCard key={r.id} resource={r} onSelect={setSelectedId} />
+        ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination" style={{ marginBottom: 28 }}>
+          <button
+            type="button"
+            className="btn"
+            style={{ background: "var(--panel)", border: "1px solid var(--line)" }}
+            onClick={() => goToPage(safePage - 1)}
+            disabled={safePage === 1}
+          >
+            ← Previous
+          </button>
+          <span className="pagination-status">
+            Page {safePage} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className="btn"
+            style={{ background: "var(--panel)", border: "1px solid var(--line)" }}
+            onClick={() => goToPage(safePage + 1)}
+            disabled={safePage === totalPages}
+          >
+            Next →
+          </button>
+        </div>
+      )}
 
       <h3 style={{ fontSize: 15, marginBottom: 10, color: "var(--ink-soft)" }}>Map view</h3>
       <ResourceMap resources={filtered} selectedId={selectedId} onSelect={setSelectedId} />
