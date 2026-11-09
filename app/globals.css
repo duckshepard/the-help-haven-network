@@ -503,3 +503,35 @@ textarea {
   color: var(--ink-soft);
   white-space: nowrap;
 }
+
+/* Printable resource list (task 4, 2026-11-09) — .print-only content
+   (the full filtered list rendered in BrowseClient.js) is hidden on
+   screen and shown only when printing; .no-print marks site chrome and
+   interactive controls (crisis bar, sponsor banner, header, footer, nav,
+   forms, buttons, map, pagination) that make no sense on paper and are
+   hidden the other way around. Chosen over hiding everything via a single
+   blanket rule so print output stays a clean, ink-friendly, complete list
+   instead of a scraped screenshot of whatever page happened to be
+   on-screen. */
+.print-only {
+  display: none;
+}
+@media print {
+  [role="note"],
+  header,
+  footer,
+  .no-print,
+  .skip-link {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body {
+    color: #000;
+  }
+}
