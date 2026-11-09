@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import { CATEGORIES, ALL_CATEGORY } from "@/lib/categories";
+import { CATEGORIES, ALL_CATEGORY, categoryPill } from "@/lib/categories";
 import CategoryIcon from "@/lib/categoryIcons";
+import { useLanguage } from "@/components/LanguageProvider";
 
 // Compact horizontal category switcher for the /browse results page. Was
 // a vertical sticky sidebar; moved to a wrapping pill row between the page
@@ -18,7 +21,15 @@ import CategoryIcon from "@/lib/categoryIcons";
 // 14-category row doesn't wrap into a wall of long phrases. Each entry
 // shows the same custom icon used on the homepage grid, for a consistent
 // visual language across pages.
+//
+// Marked "use client" explicitly (task 7, 2026-11-09) — it already ran as
+// part of the client bundle (imported from BrowseClient.js, a Client
+// Component, with an interactive onChange on the detox checkbox), but
+// now it also reads the EN/ES language context directly via
+// useLanguage(), so the boundary is explicit rather than inherited.
 export default function CategoryRail({ activeCategory = "all", zip = "", detoxOnly = false, onToggleDetox }) {
+  const { t, lang } = useLanguage();
+
   function hrefFor(slug) {
     const base = slug === "all" ? "/browse" : `/browse/${slug}`;
     return zip ? `${base}?zip=${zip}` : base;
@@ -26,23 +37,24 @@ export default function CategoryRail({ activeCategory = "all", zip = "", detoxOn
 
   return (
     <div className="category-pills">
-      <Pill href={hrefFor("all")} slug={ALL_CATEGORY.slug} label={ALL_CATEGORY.label} active={activeCategory === "all"} />
+      <Pill href={hrefFor("all")} slug={ALL_CATEGORY.slug} label={categoryPill(ALL_CATEGORY, lang)} active={activeCategory === "all"} />
       {CATEGORIES.map((c) => (
         <Pill
           key={c.slug}
           href={hrefFor(c.slug)}
           slug={c.slug}
-          label={c.pill || c.label}
+          label={categoryPill(c, lang)}
           active={activeCategory === c.slug}
           detoxOnly={c.slug === "recovery" ? detoxOnly : undefined}
           onToggleDetox={c.slug === "recovery" ? onToggleDetox : undefined}
+          detoxLabel={t("categoryRail.detoxToggle")}
         />
       ))}
     </div>
   );
 }
 
-function Pill({ href, slug, label, active, detoxOnly, onToggleDetox }) {
+function Pill({ href, slug, label, active, detoxOnly, onToggleDetox, detoxLabel }) {
   const hasDetoxToggle = typeof onToggleDetox === "function";
 
   return (
@@ -66,7 +78,7 @@ function Pill({ href, slug, label, active, detoxOnly, onToggleDetox }) {
             }}
           >
             <input type="checkbox" checked={detoxOnly} onChange={onToggleDetox} />
-            Only show places that offer detox
+            {detoxLabel}
           </label>
         </div>
       )}
