@@ -3,12 +3,42 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CATEGORY_BY_SLUG } from "@/lib/categories";
 import ResourceMapLoader from "@/components/ResourceMapLoader";
+import ShareButton from "@/components/ShareButton";
+import ResourceFeedback from "@/components/ResourceFeedback";
 
 // Server Component — fetches directly with the public anon key (reads are
 // open on `resources` per the RLS policy in supabase/schema.sql), so this
 // page works without any client-side JS and is fine for search engines too.
 function getServerSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+}
+
+// Per-resource SEO metadata (2026-11-09) — each listing gets its own title
+// and description instead of inheriting the site-wide default, so search
+// results and shared links show the actual resource, not just "The Help
+// Haven Network" for every page.
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const supabase = getServerSupabase();
+  const { data: resource } = await supabase.from("resources").select("*").eq("id", id).single();
+
+  if (!resource) {
+    return { title: "Resource not found | The Help Haven Network" };
+  }
+
+  const description = resource.description
+    ? resource.description.slice(0, 155)
+    : `Free help in the Dallas-Fort Worth area: ${resource.name}.`;
+
+  return {
+    title: `${resource.name} | The Help Haven Network`,
+    description,
+    openGraph: {
+      title: resource.name,
+      description,
+      type: "website",
+    },
+  };
 }
 
 export default async function ResourceDetailPage({ params }) {
@@ -23,8 +53,31 @@ export default async function ResourceDetailPage({ params }) {
 
   const cat = CATEGORY_BY_SLUG[resource.category];
 
+  // schema.org structured data so search engines (and anything else that
+  // reads JSON-LD) understand this page is a specific help resource, not
+  // just generic text.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: resource.name,
+    ...(resource.description && { description: resource.description }),
+    ...(resource.phone && { telephone: resource.phone }),
+    ...(resource.website && { url: resource.website }),
+    ...(resource.address && {
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: resource.address,
+      },
+    }),
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <p style={{ marginBottom: 16 }}>
         <Link href="/" style={{ fontSize: 13.5 }}>
           &larr; Back to the directory
@@ -102,6 +155,22 @@ export default async function ResourceDetailPage({ params }) {
             </>
           )}
         </dl>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+            marginTop: 20,
+            paddingTop: 16,
+            borderTop: "1px solid var(--line)",
+          }}
+        >
+          <ResourceFeedback resourceId={resource.id} />
+          <ShareButton title={resource.name} text={`${resource.name} — The Help Haven Network`} />
+        </div>
       </div>
 
       <div style={{ maxWidth: 720 }}>
@@ -110,4 +179,3 @@ export default async function ResourceDetailPage({ params }) {
     </div>
   );
 }
-
