@@ -1,8 +1,9 @@
-import Link from "next/link";
 import "./globals.css";
 import CrisisBar from "@/components/CrisisBar";
 import Header from "@/components/Header";
 import AdBanner from "@/components/AdBanner";
+import Footer from "@/components/Footer";
+import { LanguageProvider } from "@/components/LanguageProvider";
 
 export const metadata = {
   title: "The Help Haven Network",
@@ -28,43 +29,32 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        {/* Skip link — invisible until a keyboard user tabs to it (first
-            focusable thing on the page), then jumps straight past the crisis
-            bar, sponsor banner, and header nav into the actual page content. */}
-        <a href="#main-content" className="skip-link">
-          Skip to main content
-        </a>
-        {/* Crisis bar (2026-11-09) — above everything else, including the
-            sponsor banner, so 988/211 are one glance away on every page
-            without anyone having to find or browse the Crisis category
-            first. See components/CrisisBar.js. */}
-        <CrisisBar />
-        <AdBanner />
-        <Header />
-        <main id="main-content" className="shell">
-          {children}
-        </main>
-        <footer className="shell" style={{ paddingTop: 24, paddingBottom: 24, color: "var(--ink-soft)", fontSize: 12 }}>
-          Informational directory only — not a substitute for professional medical, legal, or crisis
-          care. If you or someone else is in immediate danger, call 911. Listings are community-sourced
-          and reviewed, but always confirm hours and eligibility directly with the organization.
-          {" · "}
-          <Link href="/accessibility" style={{ color: "var(--ink-soft)" }}>
-            Accessibility
-          </Link>
-          {" · "}
-          <Link href="/privacy" style={{ color: "var(--ink-soft)" }}>
-            Privacy
-          </Link>
-          {" · "}
-          <Link href="/terms" style={{ color: "var(--ink-soft)" }}>
-            Terms
-          </Link>
-          {" · "}
-          <Link href="/admin" style={{ color: "var(--ink-soft)" }}>
-            Admin
-          </Link>
-        </footer>
+        {/* EN/ES toggle (task 7, 2026-11-09) — wraps everything inside <body>
+            so the crisis bar, sponsor banner, header, page content, and
+            footer can all read the current language. Still a Server
+            Component itself (RootLayout); LanguageProvider is the client
+            boundary. lang="en" above stays fixed either way — this is a
+            client-side toggle, not server-negotiated localization, so the
+            <html> lang attribute isn't flipped per visitor. */}
+        <LanguageProvider>
+          {/* Skip link — invisible until a keyboard user tabs to it (first
+              focusable thing on the page), then jumps straight past the crisis
+              bar, sponsor banner, and header nav into the actual page content. */}
+          <a href="#main-content" className="skip-link">
+            Skip to main content
+          </a>
+          {/* Crisis bar (2026-11-09) — above everything else, including the
+              sponsor banner, so 988/211 are one glance away on every page
+              without anyone having to find or browse the Crisis category
+              first. See components/CrisisBar.js. */}
+          <CrisisBar />
+          <AdBanner />
+          <Header />
+          <main id="main-content" className="shell">
+            {children}
+          </main>
+          <Footer />
+        </LanguageProvider>
       </body>
     </html>
   );
