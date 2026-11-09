@@ -5,21 +5,27 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { matchesZip, ZIP_SEARCH_RADIUS_MILES } from "@/lib/zip";
-import { CATEGORY_BY_SLUG, ALL_CATEGORY } from "@/lib/categories";
+import { CATEGORY_BY_SLUG, ALL_CATEGORY, categoryLabel } from "@/lib/categories";
 import CategoryRail from "@/components/CategoryRail";
 import ResourceCard from "@/components/ResourceCard";
 import CategoryIcon from "@/lib/categoryIcons";
+import { useLanguage } from "@/components/LanguageProvider";
 
 // ssr:false is only legal inside a Client Component — this file is one
 // ("use client" above) precisely so the map can be loaded this way.
 const ResourceMap = dynamic(() => import("@/components/ResourceMap"), {
   ssr: false,
-  loading: () => (
-    <div className="map-container" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ink-soft)" }}>
-      Loading map…
-    </div>
-  ),
+  loading: () => <LoadingMap />,
 });
+
+function LoadingMap() {
+  const { t } = useLanguage();
+  return (
+    <div className="map-container" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ink-soft)" }}>
+      {t("browse.loadingMap")}
+    </div>
+  );
+}
 
 // Resources shown per page in the grid below. 16 = 4 rows of the 4-column
 // grid at desktop width, so a page never runs past a glance-able number of
@@ -43,6 +49,7 @@ export default function BrowseClient({ initialCategory, initialResources = [] })
 function BrowseResults({ initialCategory, initialResources }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, lang } = useLanguage();
   // A path-based category (/browse/crisis) wins by default; ?category= in
   // the query string still works too, so old /browse?category=... links
   // people may have saved or shared keep working.
@@ -149,6 +156,7 @@ function BrowseResults({ initialCategory, initialResources }) {
   }
 
   const basePath = activeCat !== "all" ? `/browse/${activeCat}` : "/browse";
+  const activeCategoryName = categoryLabel(activeCategoryInfo, lang);
 
   // Detox is a real, non-obvious need buried inside "Substance Abuse &
   // Recovery" — some of those listings offer it, most don't, and there's no
@@ -191,17 +199,15 @@ function BrowseResults({ initialCategory, initialResources }) {
           <CategoryIcon slug={activeCategoryInfo.slug} size={22} />
         </span>
         <div>
-          <h2 style={{ fontSize: 16, marginBottom: 2 }}>{activeCategoryInfo.label}</h2>
-          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 12.5 }}>
-            Search by name or need below, or filter by ZIP — the map is further down, under the listings.
-          </p>
+          <h2 style={{ fontSize: 16, marginBottom: 2 }}>{activeCategoryName}</h2>
+          <p style={{ margin: 0, color: "var(--ink-soft)", fontSize: 12.5 }}>{t("browse.subtitle")}</p>
         </div>
       </div>
 
       <div className="no-print" style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <input
           type="search"
-          placeholder="Search by name, service, or need…"
+          placeholder={t("browse.searchPlaceholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           style={{ flex: "2 1 220px", minWidth: 200 }}
@@ -212,17 +218,17 @@ function BrowseResults({ initialCategory, initialResources }) {
             inputMode="numeric"
             pattern="\d{5}"
             maxLength={5}
-            placeholder="ZIP code"
+            placeholder={t("browse.zipPlaceholder")}
             value={zipInput}
             onChange={(e) => setZipInput(e.target.value)}
             style={{ flex: 1, minWidth: 120 }}
           />
           <button className="btn" style={{ background: "var(--panel)", border: "1px solid var(--line)", flex: "none" }} type="submit">
-            {zip ? "Update" : "Find Nearby"}
+            {zip ? t("browse.update") : t("browse.findNearby")}
           </button>
           {zip && (
             <a href={basePath} className="btn" style={{ background: "transparent", border: "1px solid var(--line)", flex: "none" }}>
-              Clear ZIP
+              {t("browse.clearZip")}
             </a>
           )}
         </form>
@@ -231,22 +237,22 @@ function BrowseResults({ initialCategory, initialResources }) {
       {zip && (
         <p className="no-print" style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 16 }}>
           {zipLocating
-            ? `Locating ${zip}…`
+            ? t("browse.locating", { zip })
             : zipCenter
-            ? `Showing resources within ${ZIP_SEARCH_RADIUS_MILES} miles of ${zip}, plus phone/text lines and statewide services that aren't tied to one address.`
-            : `Showing resources located in ${zip}, plus phone/text lines and statewide services that aren't tied to one address.`}
+            ? t("browse.showingNear", { radius: ZIP_SEARCH_RADIUS_MILES, zip })
+            : t("browse.showingIn", { zip })}
         </p>
       )}
 
       {loadError && (
         <div className="form-msg err no-print" style={{ marginBottom: 16 }}>
-          Couldn&apos;t load the directory: {loadError}. Double-check your Supabase env vars in .env.local.
+          {t("browse.loadError", { error: loadError })}
         </div>
       )}
 
       <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 12.5, color: "var(--ink-soft)" }}>
-          {filtered.length} resource{filtered.length === 1 ? "" : "s"} match
+          {t("browse.resourcesMatch", { count: filtered.length, plural: filtered.length === 1 ? "" : "s" })}
         </span>
         {filtered.length > 0 && (
           <button
@@ -255,7 +261,7 @@ function BrowseResults({ initialCategory, initialResources }) {
             style={{ background: "transparent", border: "1px solid var(--line)", fontSize: 12.5, padding: "6px 12px" }}
             onClick={() => window.print()}
           >
-            🖨 Print this list
+            {t("browse.printList")}
           </button>
         )}
       </div>
@@ -264,10 +270,10 @@ function BrowseResults({ initialCategory, initialResources }) {
         {!loading && filtered.length === 0 && (
           <div className="empty">
             {detoxOnly
-              ? 'No detox-offering listings match your other filters yet. Try clearing the ZIP or category filter.'
+              ? t("browse.emptyDetox")
               : zip
-              ? `No resources found in ${zip} yet. Try a nearby ZIP, or use "Add a Resource" to add one.`
-              : 'No resources match yet. Try a different search, or use "Add a Resource" to add one.'}
+              ? t("browse.emptyZip", { zip })
+              : t("browse.emptyDefault")}
           </div>
         )}
         {pageItems.map((r) => (
@@ -284,11 +290,9 @@ function BrowseResults({ initialCategory, initialResources }) {
             onClick={() => goToPage(safePage - 1)}
             disabled={safePage === 1}
           >
-            ← Previous
+            {t("browse.prevPage")}
           </button>
-          <span className="pagination-status">
-            Page {safePage} of {totalPages}
-          </span>
+          <span className="pagination-status">{t("browse.pageStatus", { page: safePage, total: totalPages })}</span>
           <button
             type="button"
             className="btn"
@@ -296,7 +300,7 @@ function BrowseResults({ initialCategory, initialResources }) {
             onClick={() => goToPage(safePage + 1)}
             disabled={safePage === totalPages}
           >
-            Next →
+            {t("browse.nextPage")}
           </button>
         </div>
       )}
@@ -308,20 +312,20 @@ function BrowseResults({ initialCategory, initialResources }) {
           "Print this list" above always produces a complete, ink-friendly
           printout regardless of pagination. */}
       <div className="print-only">
-        <h2 style={{ fontSize: 18, marginBottom: 4, color: "#000" }}>The Help Haven Network</h2>
+        <h2 style={{ fontSize: 18, marginBottom: 4, color: "#000" }}>{t("browse.printTitle")}</h2>
         <p style={{ fontSize: 12, color: "#555", marginBottom: 16 }}>
-          {activeCategoryInfo.label}
-          {zip ? ` · near ${zip}` : ""}
+          {activeCategoryName}
+          {zip ? ` · ${t("browse.printNear", { zip })}` : ""}
           {query ? ` · "${query}"` : ""}
-          {" · printed "}
-          {new Date().toLocaleDateString()}
+          {" · "}
+          {t("browse.printedOn", { date: new Date().toLocaleDateString() })}
         </p>
-        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#333" }}>No resources match this search.</p>}
+        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#333" }}>{t("browse.printEmpty")}</p>}
         {filtered.map((r) => (
           <div key={r.id} style={{ borderBottom: "1px solid #ccc", padding: "8px 0" }}>
             <strong style={{ fontSize: 13.5, color: "#000" }}>{r.name}</strong>
-            {r.free && <span style={{ fontSize: 11, marginLeft: 6, color: "#000" }}>(Free)</span>}
-            {r.hours_247 && <span style={{ fontSize: 11, marginLeft: 6, color: "#000" }}>(24/7)</span>}
+            {r.free && <span style={{ fontSize: 11, marginLeft: 6, color: "#000" }}>{t("browse.printFree")}</span>}
+            {r.hours_247 && <span style={{ fontSize: 11, marginLeft: 6, color: "#000" }}>{t("browse.print247")}</span>}
             <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>
               {r.phone && <span>{r.phone}</span>}
               {r.phone && r.address && " · "}
@@ -333,7 +337,7 @@ function BrowseResults({ initialCategory, initialResources }) {
       </div>
 
       <div className="no-print">
-        <h3 style={{ fontSize: 15, marginBottom: 10, color: "var(--ink-soft)" }}>Map view</h3>
+        <h3 style={{ fontSize: 15, marginBottom: 10, color: "var(--ink-soft)" }}>{t("browse.mapView")}</h3>
         <ResourceMap resources={filtered} selectedId={selectedId} onSelect={setSelectedId} />
       </div>
     </div>
