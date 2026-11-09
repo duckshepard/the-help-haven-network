@@ -1,5 +1,6 @@
 import Link from "next/link";
 import "./globals.css";
+import CrisisBar from "@/components/CrisisBar";
 import Header from "@/components/Header";
 import AdBanner from "@/components/AdBanner";
 
@@ -28,11 +29,16 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {/* Skip link — invisible until a keyboard user tabs to it (first
-            focusable thing on the page), then jumps straight past the
-            sponsor banner and header nav into the actual page content. */}
+            focusable thing on the page), then jumps straight past the crisis
+            bar, sponsor banner, and header nav into the actual page content. */}
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
+        {/* Crisis bar (2026-11-09) — above everything else, including the
+            sponsor banner, so 988/211 are one glance away on every page
+            without anyone having to find or browse the Crisis category
+            first. See components/CrisisBar.js. */}
+        <CrisisBar />
         <AdBanner />
         <Header />
         <main id="main-content" className="shell">
