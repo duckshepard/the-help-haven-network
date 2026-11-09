@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const EMPTY_FORM = { name: "", email: "", message: "" };
 
@@ -10,7 +11,12 @@ const EMPTY_FORM = { name: "", email: "", message: "" };
 // to find. Deliberately simple: no categories, no required contact info,
 // just "what would help." Submissions land in Supabase (RLS-gated the
 // same way "submissions" is: anyone can insert, only admins can read).
+//
+// Labels and messages read the EN/ES language context (task 7,
+// 2026-11-09); the submission itself is stored exactly as typed,
+// whichever language that was in.
 export default function SuggestionsPage() {
+  const { t } = useLanguage();
   const [form, setForm] = useState(EMPTY_FORM);
   const [status, setStatus] = useState(null); // { type: 'ok' | 'err', message }
   const [submitting, setSubmitting] = useState(false);
@@ -32,9 +38,9 @@ export default function SuggestionsPage() {
 
     setSubmitting(false);
     if (error) {
-      setStatus({ type: "err", message: `Something went wrong (${error.message}). Please try again.` });
+      setStatus({ type: "err", message: t("suggestions.errPrefix", { error: error.message }) });
     } else {
-      setStatus({ type: "ok", message: "Thank you — we read every suggestion, and it genuinely shapes what we build next." });
+      setStatus({ type: "ok", message: t("suggestions.ok") });
       setForm(EMPTY_FORM);
     }
   }
@@ -42,22 +48,18 @@ export default function SuggestionsPage() {
   return (
     <div style={{ maxWidth: 640 }}>
       <div className="hero-panel" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 6 }}>Suggestions</h2>
-        <p style={{ color: "var(--ink-soft)", margin: 0, fontSize: 13.5 }}>
-          This site only gets better with input from the people actually using it. Missing a
-          resource, found something confusing, or have an idea that would make this easier to use?
-          Tell us below — contact info is optional, but if you leave an email we may follow up.
-        </p>
+        <h2 style={{ fontSize: 22, marginBottom: 6 }}>{t("suggestions.title")}</h2>
+        <p style={{ color: "var(--ink-soft)", margin: 0, fontSize: 13.5 }}>{t("suggestions.subtitle")}</p>
       </div>
 
       <div className="panel-block">
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="sg-message">Your suggestion</label>
+            <label htmlFor="sg-message">{t("suggestions.messageLabel")}</label>
             <textarea
               id="sg-message"
               required
-              placeholder="What would make this site more helpful?"
+              placeholder={t("suggestions.messagePlaceholder")}
               value={form.message}
               onChange={(e) => update("message", e.target.value)}
               style={{ minHeight: 120 }}
@@ -66,15 +68,15 @@ export default function SuggestionsPage() {
 
           <div className="field two">
             <div>
-              <label htmlFor="sg-name">Name (optional)</label>
+              <label htmlFor="sg-name">{t("suggestions.nameLabel")}</label>
               <input id="sg-name" value={form.name} onChange={(e) => update("name", e.target.value)} />
             </div>
             <div>
-              <label htmlFor="sg-email">Email (optional)</label>
+              <label htmlFor="sg-email">{t("suggestions.emailLabel")}</label>
               <input
                 id="sg-email"
                 type="email"
-                placeholder="Only if you'd like a reply"
+                placeholder={t("suggestions.emailPlaceholder")}
                 value={form.email}
                 onChange={(e) => update("email", e.target.value)}
               />
@@ -82,7 +84,7 @@ export default function SuggestionsPage() {
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={submitting}>
-            {submitting ? "Sending…" : "Send suggestion"}
+            {submitting ? t("suggestions.submitting") : t("suggestions.submit")}
           </button>
 
           {status && <div className={`form-msg ${status.type === "ok" ? "ok" : "err"}`}>{status.message}</div>}
