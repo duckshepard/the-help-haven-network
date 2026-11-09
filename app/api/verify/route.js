@@ -38,7 +38,7 @@ async function handle({ website, phone, address }) {
       signal: controller.signal,
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; ResloResourceBot/1.0; +https://the-help-network-nisus-concepts.vercel.app)",
+          "Mozilla/5.0 (compatible; ResloResourceBot/1.0; +https://thehhn.net)",
       },
     });
     clearTimeout(timeout);
