@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const EMPTY_FORM = { name: "", email: "", phone: "", message: "" };
 
@@ -11,7 +12,11 @@ const EMPTY_FORM = { name: "", email: "", phone: "", message: "" };
 // placeholder — Josh hasn't supplied a payment link yet, so there's
 // nothing to wire up there until he does; an email contact point is given
 // in the meantime so a motivated donor isn't left with a dead end.
+//
+// Labels, copy, and messages read the EN/ES language context (task 7,
+// 2026-11-09); the donate section's mailto link is unchanged either way.
 export default function VolunteerPage() {
+  const { t } = useLanguage();
   const [form, setForm] = useState(EMPTY_FORM);
   const [status, setStatus] = useState(null); // { type: 'ok' | 'err', message }
   const [submitting, setSubmitting] = useState(false);
@@ -34,9 +39,9 @@ export default function VolunteerPage() {
 
     setSubmitting(false);
     if (error) {
-      setStatus({ type: "err", message: `Something went wrong (${error.message}). Please try again.` });
+      setStatus({ type: "err", message: t("volunteer.errPrefix", { error: error.message }) });
     } else {
-      setStatus({ type: "ok", message: "Thank you — we'll be in touch about ways to help." });
+      setStatus({ type: "ok", message: t("volunteer.ok") });
       setForm(EMPTY_FORM);
     }
   }
@@ -44,29 +49,24 @@ export default function VolunteerPage() {
   return (
     <div style={{ maxWidth: 640 }}>
       <div className="hero-panel" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 6 }}>Volunteer &amp; Donate</h2>
-        <p style={{ color: "var(--ink-soft)", margin: 0, fontSize: 13.5 }}>
-          The Help Haven Network runs on volunteer time and community support. If you've got an hour
-          or a skill to offer, or want to support the work directly, here's how.
-        </p>
+        <h2 style={{ fontSize: 22, marginBottom: 6 }}>{t("volunteer.heroTitle")}</h2>
+        <p style={{ color: "var(--ink-soft)", margin: 0, fontSize: 13.5 }}>{t("volunteer.heroSubtitle")}</p>
       </div>
 
       <div className="panel-block" style={{ marginBottom: 20 }}>
-        <h3 style={{ fontSize: 17, marginBottom: 10 }}>Volunteer with us</h3>
+        <h3 style={{ fontSize: 17, marginBottom: 10 }}>{t("volunteer.sectionTitle")}</h3>
         <p style={{ color: "var(--ink-soft)", fontSize: 13, marginTop: 0, marginBottom: 16 }}>
-          We're a new, small operation, so volunteer help goes a long way — verifying listings,
-          researching new resources, spreading the word, or just telling us what's missing. Tell us a
-          bit about yourself and we'll follow up.
+          {t("volunteer.sectionBody")}
         </p>
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="vol-name">Name</label>
+            <label htmlFor="vol-name">{t("volunteer.nameLabel")}</label>
             <input id="vol-name" required value={form.name} onChange={(e) => update("name", e.target.value)} />
           </div>
 
           <div className="field two">
             <div>
-              <label htmlFor="vol-email">Email</label>
+              <label htmlFor="vol-email">{t("volunteer.emailLabel")}</label>
               <input
                 id="vol-email"
                 type="email"
@@ -75,16 +75,16 @@ export default function VolunteerPage() {
               />
             </div>
             <div>
-              <label htmlFor="vol-phone">Phone (optional)</label>
+              <label htmlFor="vol-phone">{t("volunteer.phoneLabel")}</label>
               <input id="vol-phone" type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
             </div>
           </div>
 
           <div className="field">
-            <label htmlFor="vol-message">How would you like to help? (optional)</label>
+            <label htmlFor="vol-message">{t("volunteer.messageLabel")}</label>
             <textarea
               id="vol-message"
-              placeholder="Skills, availability, what you're interested in..."
+              placeholder={t("volunteer.messagePlaceholder")}
               value={form.message}
               onChange={(e) => update("message", e.target.value)}
               style={{ minHeight: 90 }}
@@ -92,7 +92,7 @@ export default function VolunteerPage() {
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={submitting}>
-            {submitting ? "Sending…" : "Sign up to volunteer"}
+            {submitting ? t("volunteer.submitting") : t("volunteer.submit")}
           </button>
 
           {status && <div className={`form-msg ${status.type === "ok" ? "ok" : "err"}`}>{status.message}</div>}
@@ -100,14 +100,23 @@ export default function VolunteerPage() {
       </div>
 
       <div className="panel-block">
-        <h3 style={{ fontSize: 17, marginBottom: 10 }}>Donate</h3>
+        <h3 style={{ fontSize: 17, marginBottom: 10 }}>{t("volunteer.donateTitle")}</h3>
         <p style={{ color: "var(--ink-soft)", fontSize: 13, margin: 0 }}>
-          We're setting up a way to accept donations directly — check back soon. In the meantime, if
-          you'd like to support the directory financially,{" "}
-          <a href="mailto:nisusconcepts@gmail.com?subject=Supporting%20The%20Help%20Haven%20Network">
-            reach out by email
-          </a>{" "}
-          and we'll follow up.
+          {(() => {
+            // Raw template (no vars passed, so the {{link}} placeholder is
+            // left untouched) split around the one spot that needs to stay
+            // a real <a> element rather than plain interpolated text.
+            const [before, after] = t("volunteer.donateBody").split("{{link}}");
+            return (
+              <>
+                {before}
+                <a href="mailto:nisusconcepts@gmail.com?subject=Supporting%20The%20Help%20Haven%20Network">
+                  {t("volunteer.donateLink")}
+                </a>
+                {after}
+              </>
+            );
+          })()}
         </p>
       </div>
     </div>
