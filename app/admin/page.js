@@ -66,6 +66,7 @@ export default function AdminDashboard() {
 
   const [submissions, setSubmissions] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [volunteers, setVolunteers] = useState([]);
   const [resources, setResources] = useState([]);
   const [stats, setStats] = useState({ totalVisits: null, visitsThisWeek: null });
 
@@ -82,18 +83,20 @@ export default function AdminDashboard() {
   const [resourceFilter, setResourceFilter] = useState("");
 
   const loadAll = useCallback(async () => {
-    const [{ data: subs, error: subsErr }, { data: res, error: resErr }, { data: suggs, error: suggsErr }] = await Promise.all([
+    const [{ data: subs, error: subsErr }, { data: res, error: resErr }, { data: suggs, error: suggsErr }, { data: vols, error: volsErr }] = await Promise.all([
       supabase.from("submissions").select("*").eq("status", "pending").order("submitted_at", { ascending: true }),
       supabase.from("resources").select("*").order("name", { ascending: true }),
       supabase.from("suggestions").select("*").eq("status", "new").order("submitted_at", { ascending: false }),
+      supabase.from("volunteers").select("*").eq("status", "new").order("submitted_at", { ascending: false }),
     ]);
 
-    if (subsErr || resErr || suggsErr) {
-      setLoadError((subsErr || resErr || suggsErr).message);
+    if (subsErr || resErr || suggsErr || volsErr) {
+      setLoadError((subsErr || resErr || suggsErr || volsErr).message);
     } else {
       setSubmissions(subs || []);
       setResources(res || []);
       setSuggestions(suggs || []);
+      setVolunteers(vols || []);
     }
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -200,6 +203,15 @@ export default function AdminDashboard() {
     setBusyId(suggestion.id);
     await supabase.from("suggestions").update({ status: "reviewed" }).eq("id", suggestion.id);
     setSuggestions((s) => s.filter((x) => x.id !== suggestion.id));
+    setBusyId(null);
+  }
+
+  // ---- Volunteers -------------------------------------------------------
+
+  async function handleDismissVolunteer(volunteer) {
+    setBusyId(volunteer.id);
+    await supabase.from("volunteers").update({ status: "reviewed" }).eq("id", volunteer.id);
+    setVolunteers((v) => v.filter((x) => x.id !== volunteer.id));
     setBusyId(null);
   }
 
@@ -346,6 +358,7 @@ export default function AdminDashboard() {
         <StatTile label="Total resources" value={resources.length} />
         <StatTile label="Pending submissions" value={submissions.length} />
         <StatTile label="New suggestions" value={suggestions.length} />
+        <StatTile label="New volunteers" value={volunteers.length} />
         <StatTile label="Visits (all time)" value={stats.totalVisits} />
         <StatTile label="Visits (7 days)" value={stats.visitsThisWeek} />
       </div>
@@ -440,6 +453,42 @@ export default function AdminDashboard() {
                 style={{ background: "transparent", border: "1px solid var(--line)" }}
                 disabled={busyId === s.id}
                 onClick={() => handleDismissSuggestion(s)}
+              >
+                Mark reviewed
+              </button>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* ---- Volunteers ---- */}
+      <section style={{ marginBottom: 36 }}>
+        <h3 style={{ fontSize: 17, marginBottom: 12 }}>Volunteer signups</h3>
+        {volunteers.length === 0 && <div className="empty">No new volunteer signups.</div>}
+        {volunteers.map((v) => (
+          <div key={v.id} className="panel-block" style={{ padding: "15px 17px", marginBottom: 12, maxWidth: 640 }}>
+            <h4 style={{ fontSize: 15.5, fontWeight: 600, margin: 0 }}>{v.name}</h4>
+            <div style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 3, marginTop: 6 }}>
+              {v.email && (
+                <div>
+                  <strong>Email:</strong>{" "}
+                  <a className="mono" href={`mailto:${v.email}`}>
+                    {v.email}
+                  </a>
+                </div>
+              )}
+              {v.phone && <div><strong>Phone:</strong> {v.phone}</div>}
+              {v.message && <div><strong>Message:</strong> {v.message}</div>}
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+              {new Date(v.submitted_at).toLocaleDateString()}
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <button
+                className="btn"
+                style={{ background: "transparent", border: "1px solid var(--line)" }}
+                disabled={busyId === v.id}
+                onClick={() => handleDismissVolunteer(v)}
               >
                 Mark reviewed
               </button>
