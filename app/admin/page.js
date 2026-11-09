@@ -65,6 +65,7 @@ export default function AdminDashboard() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   const [submissions, setSubmissions] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [resources, setResources] = useState([]);
   const [stats, setStats] = useState({ totalVisits: null, visitsThisWeek: null });
 
@@ -81,16 +82,18 @@ export default function AdminDashboard() {
   const [resourceFilter, setResourceFilter] = useState("");
 
   const loadAll = useCallback(async () => {
-    const [{ data: subs, error: subsErr }, { data: res, error: resErr }] = await Promise.all([
+    const [{ data: subs, error: subsErr }, { data: res, error: resErr }, { data: suggs, error: suggsErr }] = await Promise.all([
       supabase.from("submissions").select("*").eq("status", "pending").order("submitted_at", { ascending: true }),
       supabase.from("resources").select("*").order("name", { ascending: true }),
+      supabase.from("suggestions").select("*").eq("status", "new").order("submitted_at", { ascending: false }),
     ]);
 
-    if (subsErr || resErr) {
-      setLoadError((subsErr || resErr).message);
+    if (subsErr || resErr || suggsErr) {
+      setLoadError((subsErr || resErr || suggsErr).message);
     } else {
       setSubmissions(subs || []);
       setResources(res || []);
+      setSuggestions(suggs || []);
     }
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -188,6 +191,15 @@ export default function AdminDashboard() {
     setBusyId(submission.id);
     await supabase.from("submissions").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", submission.id);
     setSubmissions((subs) => subs.filter((s) => s.id !== submission.id));
+    setBusyId(null);
+  }
+
+  // ---- Suggestions ----------------------------------------------------
+
+  async function handleDismissSuggestion(suggestion) {
+    setBusyId(suggestion.id);
+    await supabase.from("suggestions").update({ status: "reviewed" }).eq("id", suggestion.id);
+    setSuggestions((s) => s.filter((x) => x.id !== suggestion.id));
     setBusyId(null);
   }
 
@@ -333,6 +345,7 @@ export default function AdminDashboard() {
       >
         <StatTile label="Total resources" value={resources.length} />
         <StatTile label="Pending submissions" value={submissions.length} />
+        <StatTile label="New suggestions" value={suggestions.length} />
         <StatTile label="Visits (all time)" value={stats.totalVisits} />
         <StatTile label="Visits (7 days)" value={stats.visitsThisWeek} />
       </div>
@@ -400,6 +413,39 @@ export default function AdminDashboard() {
             </div>
           );
         })}
+      </section>
+
+      {/* ---- Suggestions ---- */}
+      <section style={{ marginBottom: 36 }}>
+        <h3 style={{ fontSize: 17, marginBottom: 12 }}>Suggestions</h3>
+        {suggestions.length === 0 && <div className="empty">No new suggestions.</div>}
+        {suggestions.map((s) => (
+          <div key={s.id} className="panel-block" style={{ padding: "15px 17px", marginBottom: 12, maxWidth: 640 }}>
+            <p style={{ margin: 0, color: "var(--ink)", fontSize: 14, lineHeight: 1.5 }}>{s.message}</p>
+            <div style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+              {s.name && <span>{s.name} — </span>}
+              {s.email ? (
+                <a className="mono" href={`mailto:${s.email}`}>
+                  {s.email}
+                </a>
+              ) : (
+                "no contact info given"
+              )}
+              {" · "}
+              {new Date(s.submitted_at).toLocaleDateString()}
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <button
+                className="btn"
+                style={{ background: "transparent", border: "1px solid var(--line)" }}
+                disabled={busyId === s.id}
+                onClick={() => handleDismissSuggestion(s)}
+              >
+                Mark reviewed
+              </button>
+            </div>
+          </div>
+        ))}
       </section>
 
       {/* ---- Add / edit resource ---- */}
