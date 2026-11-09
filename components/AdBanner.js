@@ -14,7 +14,7 @@ export default function AdBanner() {
   // banner needs its own dark background regardless of theme so its light
   // text stays readable (light-on-light here would fail contrast).
   return (
-    <div className="shell" style={{ paddingTop: 20, paddingBottom: 0 }}>
+    <div className="shell no-print" style={{ paddingTop: 20, paddingBottom: 0 }}>
       <div
         style={{
           background: "linear-gradient(180deg, #33509e 0%, #16224f 100%)",
