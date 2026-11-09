@@ -93,7 +93,16 @@ export default function AdminDashboard() {
     if (subsErr || resErr || suggsErr || volsErr) {
       setLoadError((subsErr || resErr || suggsErr || volsErr).message);
     } else {
-      setSubmissions(subs || []);
+      // Organization submissions surface first — they're self-registered
+      // listings from the org itself, so they tend to need less digging to
+      // verify than an individual reporting a resource second-hand. Within
+      // each group, oldest-first is preserved (the query already sorted
+      // that way, and Array#sort is stable).
+      const sortedSubs = [...(subs || [])].sort((a, b) => {
+        if (a.submitter_type === b.submitter_type) return 0;
+        return a.submitter_type === "organization" ? -1 : 1;
+      });
+      setSubmissions(sortedSubs);
       setResources(res || []);
       setSuggestions(suggs || []);
       setVolunteers(vols || []);
@@ -373,10 +382,25 @@ export default function AdminDashboard() {
           return (
             <div key={s.id} className="panel-block" style={{ padding: "15px 17px", marginBottom: 12, maxWidth: 640 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                <h4 style={{ fontSize: 15.5, fontWeight: 600 }}>
-                  {s.name} {s.submitter_type === "organization" && <span style={{ fontWeight: 400, fontSize: 12, color: "var(--ink-soft)" }}>(self-registered)</span>}
-                </h4>
-                <span className="badge" style={{ borderColor: "transparent", background: cat ? cat.tint : "var(--teal-tint)", color: cat ? cat.color : "var(--teal-dark)", borderRadius: 999 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
+                  <h4 style={{ fontSize: 15.5, fontWeight: 600 }}>{s.name}</h4>
+                  <span
+                    className="badge"
+                    style={{
+                      alignSelf: "flex-start",
+                      borderColor: s.submitter_type === "organization" ? "transparent" : "var(--line)",
+                      background: s.submitter_type === "organization" ? "var(--teal-tint)" : "var(--panel)",
+                      color: s.submitter_type === "organization" ? "var(--teal-dark)" : "var(--ink-soft)",
+                      borderRadius: 999,
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.3,
+                    }}
+                  >
+                    {s.submitter_type === "organization" ? "Organization" : "Individual"}
+                  </span>
+                </div>
+                <span className="badge" style={{ borderColor: "transparent", background: cat ? cat.tint : "var(--teal-tint)", color: cat ? cat.color : "var(--teal-dark)", borderRadius: 999, flex: "none" }}>
                   {cat ? cat.label : s.category}
                 </span>
               </div>
