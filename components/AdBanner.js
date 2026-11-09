@@ -1,3 +1,7 @@
+"use client";
+
+import { useLanguage } from "@/components/LanguageProvider";
+
 // Placeholder sponsor banner. Sits at the top of every page, above the
 // header, as a contained rounded pill inside the same shell width as the
 // rest of the site (not a full-bleed edge-to-edge bar) — matching the
@@ -7,7 +11,12 @@
 // clearly-labeled placeholder that shows where that space will live once
 // there is one. Swap the contents of this component (or route it through a
 // real ad slot/sponsor rotation) once a sponsor is signed.
+//
+// Converted to a Client Component (task 7, 2026-11-09) so the placeholder
+// copy can read the EN/ES language context.
 export default function AdBanner() {
+  const { t } = useLanguage();
+
   // Fixed dark-navy-to-cobalt colors here (not the --teal/--teal-dark
   // variables) on purpose: those variables now hold light pastel-blue
   // values meant for text/accents against the site's dark theme, and this
@@ -28,9 +37,7 @@ export default function AdBanner() {
           flexWrap: "wrap",
         }}
       >
-        <span style={{ fontSize: 13, color: "#eef7f5" }}>
-          <strong>Sponsor space available.</strong> This spot is reserved for a community partner.
-        </span>
+        <span style={{ fontSize: 13, color: "#eef7f5" }}>{t("adBanner.text")}</span>
         <a
           href="mailto:nisusconcepts@gmail.com?subject=Sponsoring%20The%20Help%20Haven%20Network"
           style={{
@@ -41,7 +48,7 @@ export default function AdBanner() {
             flex: "none",
           }}
         >
-          Inquire about sponsoring &rarr;
+          {t("adBanner.cta")}
         </a>
       </div>
     </div>
