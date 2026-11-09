@@ -177,7 +177,7 @@ function BrowseResults({ initialCategory, initialResources }) {
           globals.css is untouched, so the homepage hero and the About/Add
           pages (which also use that class) keep their original size. */}
       <div
-        className="hero-panel"
+        className="hero-panel no-print"
         style={{
           marginBottom: 16,
           display: "flex",
@@ -198,7 +198,7 @@ function BrowseResults({ initialCategory, initialResources }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="no-print" style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <input
           type="search"
           placeholder="Search by name, service, or need…"
@@ -229,7 +229,7 @@ function BrowseResults({ initialCategory, initialResources }) {
       </div>
 
       {zip && (
-        <p style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 16 }}>
+        <p className="no-print" style={{ fontSize: 13, color: "var(--ink-soft)", marginBottom: 16 }}>
           {zipLocating
             ? `Locating ${zip}…`
             : zipCenter
@@ -239,12 +239,28 @@ function BrowseResults({ initialCategory, initialResources }) {
       )}
 
       {loadError && (
-        <div className="form-msg err" style={{ marginBottom: 16 }}>
+        <div className="form-msg err no-print" style={{ marginBottom: 16 }}>
           Couldn&apos;t load the directory: {loadError}. Double-check your Supabase env vars in .env.local.
         </div>
       )}
 
-      <div ref={resultsRef} className="resource-grid" style={{ marginBottom: 20 }}>
+      <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+        <span style={{ fontSize: 12.5, color: "var(--ink-soft)" }}>
+          {filtered.length} resource{filtered.length === 1 ? "" : "s"} match
+        </span>
+        {filtered.length > 0 && (
+          <button
+            type="button"
+            className="btn"
+            style={{ background: "transparent", border: "1px solid var(--line)", fontSize: 12.5, padding: "6px 12px" }}
+            onClick={() => window.print()}
+          >
+            🖨 Print this list
+          </button>
+        )}
+      </div>
+
+      <div ref={resultsRef} className="resource-grid no-print" style={{ marginBottom: 20 }}>
         {!loading && filtered.length === 0 && (
           <div className="empty">
             {detoxOnly
@@ -260,7 +276,7 @@ function BrowseResults({ initialCategory, initialResources }) {
       </div>
 
       {totalPages > 1 && (
-        <div className="pagination" style={{ marginBottom: 28 }}>
+        <div className="pagination no-print" style={{ marginBottom: 28 }}>
           <button
             type="button"
             className="btn"
@@ -285,8 +301,41 @@ function BrowseResults({ initialCategory, initialResources }) {
         </div>
       )}
 
-      <h3 style={{ fontSize: 15, marginBottom: 10, color: "var(--ink-soft)" }}>Map view</h3>
-      <ResourceMap resources={filtered} selectedId={selectedId} onSelect={setSelectedId} />
+      {/* Print-only — renders the FULL filtered list (not just whichever
+          page happens to be on screen), in plain black-on-white text
+          instead of the dark glassy card styling. Hidden on screen via
+          .print-only in globals.css, shown only under @media print, so
+          "Print this list" above always produces a complete, ink-friendly
+          printout regardless of pagination. */}
+      <div className="print-only">
+        <h2 style={{ fontSize: 18, marginBottom: 4, color: "#000" }}>The Help Haven Network</h2>
+        <p style={{ fontSize: 12, color: "#555", marginBottom: 16 }}>
+          {activeCategoryInfo.label}
+          {zip ? ` · near ${zip}` : ""}
+          {query ? ` · "${query}"` : ""}
+          {" · printed "}
+          {new Date().toLocaleDateString()}
+        </p>
+        {filtered.length === 0 && <p style={{ fontSize: 13, color: "#333" }}>No resources match this search.</p>}
+        {filtered.map((r) => (
+          <div key={r.id} style={{ borderBottom: "1px solid #ccc", padding: "8px 0" }}>
+            <strong style={{ fontSize: 13.5, color: "#000" }}>{r.name}</strong>
+            {r.free && <span style={{ fontSize: 11, marginLeft: 6, color: "#000" }}>(Free)</span>}
+            {r.hours_247 && <span style={{ fontSize: 11, marginLeft: 6, color: "#000" }}>(24/7)</span>}
+            <div style={{ fontSize: 12, color: "#333", marginTop: 2 }}>
+              {r.phone && <span>{r.phone}</span>}
+              {r.phone && r.address && " · "}
+              {r.address && <span>{r.address}</span>}
+            </div>
+            {r.description && <p style={{ fontSize: 11.5, color: "#444", margin: "4px 0 0" }}>{r.description}</p>}
+          </div>
+        ))}
+      </div>
+
+      <div className="no-print">
+        <h3 style={{ fontSize: 15, marginBottom: 10, color: "var(--ink-soft)" }}>Map view</h3>
+        <ResourceMap resources={filtered} selectedId={selectedId} onSelect={setSelectedId} />
+      </div>
     </div>
   );
 }
