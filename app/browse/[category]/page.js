@@ -3,7 +3,7 @@ import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/categories";
 import { getInitialResources } from "@/lib/resources";
 import BrowseClient from "@/components/BrowseClient";
 
-const SITE_URL = "https://the-help-network-nisus-concepts.vercel.app";
+const SITE_URL = "https://thehhn.net";
 
 // Prerender every real category slug at build time so each one is a real,
 // independently indexable page — this is the point of splitting these out
