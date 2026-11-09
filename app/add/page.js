@@ -36,8 +36,14 @@ export default function AddResourcePage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setSubmitting(true);
     setStatus(null);
+
+    if (form.submitter_type === "organization" && !form.phone.trim() && !form.website.trim()) {
+      setStatus({ type: "err", message: t("add.orgContactRequired") });
+      return;
+    }
+
+    setSubmitting(true);
 
     const { error } = await supabase.from("submissions").insert({
       ...form,
@@ -84,6 +90,11 @@ export default function AddResourcePage() {
               {t("add.whoOrg")}
             </label>
           </div>
+          {form.submitter_type === "organization" && (
+            <p style={{ color: "var(--ink-soft)", fontSize: 12.5, marginTop: 8, marginBottom: 0 }}>
+              {t("add.orgContactHint")}
+            </p>
+          )}
         </div>
 
         <div className="field">
